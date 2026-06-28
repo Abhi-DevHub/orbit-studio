@@ -5,7 +5,7 @@ import { TRPCError } from '@trpc/server';
 export const projectRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     return ctx.db.project.findMany({
-      where: { userId: ctx.user.id },
+      where: { userId: ctx.session.id },
       orderBy: { updatedAt: 'desc' },
     });
   }),
@@ -14,7 +14,7 @@ export const projectRouter = router({
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const project = await ctx.db.project.findFirst({
-        where: { id: input.id, userId: ctx.user.id },
+        where: { id: input.id, userId: ctx.session.id },
         include: {
           canvasStates: { orderBy: { version: 'desc' }, take: 1 },
           conversations: { orderBy: { updatedAt: 'desc' }, take: 1 },
@@ -37,7 +37,7 @@ export const projectRouter = router({
         data: {
           name: input.name,
           description: input.description ?? '',
-          userId: ctx.user.id,
+          userId: ctx.session.id,
           templateId: input.templateId,
           canvasStates: {
             create: {
@@ -54,7 +54,7 @@ export const projectRouter = router({
     .input(z.object({ id: z.string(), name: z.string().optional(), description: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
       return ctx.db.project.update({
-        where: { id: input.id, userId: ctx.user.id },
+        where: { id: input.id, userId: ctx.session.id },
         data: { name: input.name, description: input.description },
       });
     }),
@@ -62,7 +62,7 @@ export const projectRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.project.delete({ where: { id: input.id, userId: ctx.user.id } });
+      await ctx.db.project.delete({ where: { id: input.id, userId: ctx.session.id } });
       return { success: true };
     }),
 });

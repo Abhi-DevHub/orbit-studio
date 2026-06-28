@@ -16,7 +16,7 @@ export const aiRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const result = await orchestrator.run({
-        userId: ctx.user.id,
+        userId: ctx.session.id,
         projectId: input.projectId,
         prompt: input.prompt,
         existingNodes: input.existingNodes,

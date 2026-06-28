@@ -33,8 +33,8 @@ interface WorkspacePageProps {
 export function WorkspacePage({ projectId }: WorkspacePageProps) {
   const router = useRouter();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
   const { selectedNode, selectNode, undo, redo } = useCanvasStore();
   const { sidebarOpen, rightPanelOpen, toggleSidebar, toggleRightPanel, activeRightPanel, setActiveRightPanel } = useUIStore();
@@ -42,7 +42,8 @@ export function WorkspacePage({ projectId }: WorkspacePageProps) {
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      setEdges((eds) => [...eds, { ...connection, type: 'smoothstep', animated: false, style: { stroke: '#64748b', strokeWidth: 2 } } as Edge]);
+      const newEdge: Edge = { ...connection, id: `edge_${Date.now()}`, type: 'smoothstep', style: { stroke: '#64748b', strokeWidth: 2 } };
+      setEdges((eds) => [...eds, newEdge]);
     },
     [setEdges],
   );

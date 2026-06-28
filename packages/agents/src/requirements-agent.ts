@@ -29,7 +29,6 @@ export class RequirementsAgent extends BaseAgent {
             'As a user, I can perform core business operations',
           ],
         } as Record<string, unknown>,
-        success: true,
         tokensUsed: 200,
         latencyMs: Date.now() - start,
       };

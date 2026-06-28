@@ -22,8 +22,9 @@ export function PropertiesPanel() {
     );
   }
 
-  const nodeType = node.data?.type || 'custom';
-  const label = node.data?.label || 'Untitled';
+  const data = node.data as Record<string, unknown>;
+  const nodeType = (data?.type as string) || 'custom';
+  const label = (data?.label as string) || 'Untitled';
 
   return (
     <div className="p-4">
@@ -70,7 +71,7 @@ export function PropertiesPanel() {
           <input
             type="text"
             value={label}
-            onChange={(e) => selectedNode && updateNode(selectedNode, { data: { ...node.data, label: e.target.value } })}
+            onChange={(e) => selectedNode && updateNode(selectedNode, { data: { ...data, label: e.target.value } })}
             className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-xs outline-none focus:border-ring"
           />
         </div>
@@ -79,11 +80,11 @@ export function PropertiesPanel() {
           <label className="mb-1 block text-xs text-muted-foreground">Provider</label>
           <input
             type="text"
-            value={(node.data?.metadata?.provider as string) || ''}
+            value={((data?.metadata as Record<string, unknown>)?.provider as string) || ''}
             onChange={(e) =>
               selectedNode &&
               updateNode(selectedNode, {
-                data: { ...node.data, metadata: { ...node.data?.metadata, provider: e.target.value } },
+                data: { ...data, metadata: { ...(data?.metadata as Record<string, unknown>), provider: e.target.value } },
               })
             }
             placeholder="AWS, GCP, Azure..."
@@ -94,9 +95,9 @@ export function PropertiesPanel() {
         <div>
           <label className="mb-1 block text-xs text-muted-foreground">Description</label>
           <textarea
-            value={node.data?.description || ''}
+            value={(data?.description as string) || ''}
             onChange={(e) =>
-              selectedNode && updateNode(selectedNode, { data: { ...node.data, description: e.target.value } })
+              selectedNode && updateNode(selectedNode, { data: { ...data, description: e.target.value } })
             }
             rows={3}
             className="w-full resize-none rounded-lg border border-input bg-background px-3 py-1.5 text-xs outline-none focus:border-ring"
@@ -107,11 +108,11 @@ export function PropertiesPanel() {
         <div>
           <label className="mb-1 block text-xs text-muted-foreground">Status</label>
           <select
-            value={node.data?.metadata?.status || 'planned'}
+            value={((data?.metadata as Record<string, unknown>)?.status as string) || 'planned'}
             onChange={(e) =>
               selectedNode &&
               updateNode(selectedNode, {
-                data: { ...node.data, metadata: { ...node.data?.metadata, status: e.target.value as any } },
+                data: { ...data, metadata: { ...(data?.metadata as Record<string, unknown>), status: e.target.value } },
               })
             }
             className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-xs outline-none focus:border-ring"

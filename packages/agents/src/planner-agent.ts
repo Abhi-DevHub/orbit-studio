@@ -71,7 +71,7 @@ export class PlannerAgent extends BaseAgent {
     const words = prompt.toLowerCase().split(' ');
     const features = words.filter(
       (w, i) => featureIndicators.includes(w) && i + 1 < words.length,
-    ).map((_, i) => words[i + 1]).filter(Boolean);
+    ).flatMap((_, i) => words[i + 1] ? [words[i + 1]!] : []);
     return features.length > 0 ? features : ['Core functionality'];
   }
 }

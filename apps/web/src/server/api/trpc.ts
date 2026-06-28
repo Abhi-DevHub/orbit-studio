@@ -1,24 +1,32 @@
 import { initTRPC, TRPCError } from '@trpc/server';
-import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { prisma } from '@orbit/database';
 
-export const createContext = async (opts: CreateNextContextOptions) => {
-  const session = null; // Will implement with Better Auth
+interface Session {
+  id: string;
+  email?: string;
+  name?: string;
+}
+
+export const createContext = async () => {
+  const session: Session | null = null;
   return {
     session,
     db: prisma,
-    req: opts.req,
-    res: opts.res,
   };
 };
 
-const t = initTRPC.context<typeof createContext>().create();
+const t = initTRPC.context<Awaited<ReturnType<typeof createContext>>>().create();
 
 const isAuthed = t.middleware(({ ctx, next }) => {
   if (!ctx.session) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
-  return next({ ctx: { user: ctx.session.user } });
+  return next({
+    ctx: {
+      session: ctx.session as Session,
+      db: ctx.db,
+    },
+  });
 });
 
 export const router = t.router;

@@ -8,7 +8,8 @@ export class ArchitectAgent extends BaseAgent {
 
   async execute(input: AgentInput): Promise<AgentOutput> {
     const start = Date.now();
-    const services = input.plannerOutput?.services || this.generateDefaultServices();
+    const plannerOutput = input.plannerOutput as Record<string, unknown> | undefined;
+    const services = (plannerOutput?.services as unknown[]) || this.generateDefaultServices();
 
     return {
       success: true,

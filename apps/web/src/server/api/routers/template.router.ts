@@ -32,7 +32,7 @@ export const templateRouter = router({
       return ctx.db.template.create({
         data: {
           ...input,
-          authorId: ctx.user.id,
+          authorId: ctx.session.id,
         },
       });
     }),

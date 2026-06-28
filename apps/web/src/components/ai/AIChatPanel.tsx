@@ -34,10 +34,10 @@ export function AIChatPanel() {
     // Simulate AI pipeline
     setPipelineStatus(AGENT_NAMES.map((name) => ({ name, status: 'pending' as const })));
 
-    for (let i = 0; i < AGENT_NAMES.length; i++) {
-      updateAgentStatus(AGENT_NAMES[i], 'running');
+    for (const name of AGENT_NAMES) {
+      updateAgentStatus(name, 'running');
       await new Promise((r) => setTimeout(r, 500 + Math.random() * 1000));
-      updateAgentStatus(AGENT_NAMES[i], 'completed');
+      updateAgentStatus(name, 'completed');
     }
 
     // Simulate AI response

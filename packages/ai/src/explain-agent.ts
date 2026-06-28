@@ -35,19 +35,19 @@ const NODE_EXPLANATIONS: Record<string, Partial<ExplainResult>> = {
 
 export class ExplainAgent {
   async explain(node: ArchitectureNode): Promise<ExplainResult> {
-    const base = NODE_EXPLANATIONS[node.type] || NODE_EXPLANATIONS.database;
+    const base = NODE_EXPLANATIONS[node.type] ?? NODE_EXPLANATIONS.database!;
     return {
-      purpose: base.purpose || 'System component for specific functionality.',
-      alternatives: base.alternatives || ['Alternative 1', 'Alternative 2'],
+      purpose: base.purpose ?? 'System component for specific functionality.',
+      alternatives: base.alternatives ?? ['Alternative 1', 'Alternative 2'],
       costEstimate: {
         total: this.estimateCost(node.type),
-        breakdown: [{ service: node.data.label || node.type, cost: this.estimateCost(node.type), unit: 'month' }],
+        breakdown: [{ service: (node.data?.label as string) || node.type, cost: this.estimateCost(node.type), unit: 'month' }],
         currency: 'USD',
         period: 'monthly',
       },
-      bestPractices: base.bestPractices || ['Follow vendor documentation', 'Monitor performance'],
-      commonMistakes: base.commonMistakes || ['Over-engineering', 'Missing error handling'],
-      scaling: base.scaling || 'Scale horizontally based on load metrics',
+      bestPractices: base.bestPractices ?? ['Follow vendor documentation', 'Monitor performance'],
+      commonMistakes: base.commonMistakes ?? ['Over-engineering', 'Missing error handling'],
+      scaling: base.scaling ?? 'Scale horizontally based on load metrics',
     };
   }
 

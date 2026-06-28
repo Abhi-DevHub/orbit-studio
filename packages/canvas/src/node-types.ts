@@ -7,7 +7,7 @@ export type OrbitNodeType =
   | 'ai-model' | 'monitoring' | 'secrets' | 'webhook'
   | 'third-party' | 'custom';
 
-export interface OrbitNodeData {
+export interface OrbitNodeData extends Record<string, unknown> {
   label: string;
   description?: string;
   icon?: string;
