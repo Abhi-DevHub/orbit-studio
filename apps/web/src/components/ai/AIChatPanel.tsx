@@ -1,11 +1,21 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Sparkles, Loader2, StopCircle } from 'lucide-react';
 import { useAIStore } from '@/stores/ai-store';
 import { useCanvasStore } from '@/stores/canvas-store';
 
 const AGENT_NAMES = ['Planner', 'Requirements', 'Architect', 'Database', 'API', 'Infrastructure', 'Security', 'Reviewer'];
+
+const SUGGESTIONS = [
+  'Add Redis cache layer',
+  'Scale to 10M users',
+  'Analyze for bottlenecks',
+  'Estimate monthly costs',
+  'Review security',
+  'Generate documentation',
+];
 
 export function AIChatPanel() {
   const [input, setInput] = useState('');
@@ -31,7 +41,6 @@ export function AIChatPanel() {
     setInput('');
     setIsGenerating(true);
 
-    // Simulate AI pipeline
     setPipelineStatus(AGENT_NAMES.map((name) => ({ name, status: 'pending' as const })));
 
     for (const name of AGENT_NAMES) {
@@ -40,7 +49,6 @@ export function AIChatPanel() {
       updateAgentStatus(name, 'completed');
     }
 
-    // Simulate AI response
     const aiMessage = {
       id: (Date.now() + 1).toString(),
       role: 'assistant' as const,
@@ -61,63 +69,64 @@ export function AIChatPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Agent Pipeline Status */}
-      {pipelineStatus.length > 0 && (
-        <div className="border-b border-border p-3">
-          <div className="mb-2 flex items-center gap-2 text-xs font-medium">
-            <Loader2 className="h-3 w-3 animate-spin text-primary" />
-            AI Agents Working...
-          </div>
-          <div className="space-y-1">
-            {pipelineStatus.map((agent) => (
-              <div key={agent.name} className="flex items-center gap-2 text-xs">
-                <div
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    agent.status === 'completed' ? 'bg-accent' :
-                    agent.status === 'running' ? 'bg-primary animate-pulse' :
-                    agent.status === 'error' ? 'bg-destructive' :
-                    'bg-muted'
-                  }`}
-                />
-                <span className={agent.status === 'completed' ? 'text-accent' : 'text-muted-foreground'}>
-                  {agent.name}
-                </span>
-                {agent.status === 'running' && (
-                  <span className="text-[10px] text-primary">processing...</span>
-                )}
+      <AnimatePresence>
+        {pipelineStatus.length > 0 && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="border-b border-border overflow-hidden"
+          >
+            <div className="p-3">
+              <div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium text-primary">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                AI Agents Working...
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+              <div className="space-y-1">
+                {pipelineStatus.map((agent) => (
+                  <div key={agent.name} className="flex items-center gap-2 text-[11px]">
+                    <div
+                      className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${
+                        agent.status === 'completed' ? 'bg-accent' :
+                        agent.status === 'running' ? 'bg-primary animate-pulse' :
+                        agent.status === 'error' ? 'bg-destructive' :
+                        'bg-muted'
+                      }`}
+                    />
+                    <span className={agent.status === 'completed' ? 'text-accent' : 'text-muted-foreground'}>
+                      {agent.name}
+                    </span>
+                    {agent.status === 'running' && (
+                      <span className="text-[10px] text-primary ml-auto">processing...</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-3">
         {messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center text-center">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-              <Sparkles className="h-6 w-6 text-primary" />
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <Sparkles className="h-5 w-5 text-primary" />
             </div>
-            <h3 className="mb-1 text-sm font-medium">AI Architecture Copilot</h3>
-            <p className="mb-4 max-w-[200px] text-xs text-muted-foreground">
+            <h3 className="mb-0.5 text-sm font-medium">AI Architecture Copilot</h3>
+            <p className="mb-4 max-w-[180px] text-xs text-muted-foreground leading-relaxed">
               Ask me anything about your architecture
             </p>
-            <div className="space-y-2">
-              {[
-                'Add Redis cache layer',
-                'Scale to 10M users',
-                'Analyze for bottlenecks',
-                'Estimate monthly costs',
-                'Review security',
-                'Generate documentation',
-              ].map((suggestion) => (
+            <div className="space-y-1.5 w-full max-w-[200px]">
+              {SUGGESTIONS.map((suggestion) => (
                 <button
                   key={suggestion}
                   onClick={() => {
                     setInput(suggestion);
                     inputRef.current?.focus();
                   }}
-                  className="block w-full rounded-lg border border-border bg-secondary/50 px-3 py-2 text-left text-xs text-muted-foreground hover:bg-secondary"
+                  className="block w-full rounded-md border border-border bg-secondary/30 px-3 py-2 text-left text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors duration-150 cursor-pointer"
                 >
                   {suggestion}
                 </button>
@@ -126,23 +135,30 @@ export function AIChatPanel() {
           </div>
         )}
 
-        {messages.map((msg) => (
-          <div key={msg.id} className={`mb-3 ${msg.role === 'user' ? 'text-right' : ''}`}>
-            <div
-              className={`inline-block max-w-[85%] rounded-lg px-3 py-2 text-xs ${
-                msg.role === 'user'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-foreground'
-              }`}
+        <AnimatePresence initial={false}>
+          {messages.map((msg) => (
+            <motion.div
+              key={msg.id}
+              initial={{ opacity: 0, y: 8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+              className={`mb-2.5 ${msg.role === 'user' ? 'text-right' : ''}`}
             >
-              {msg.content}
-            </div>
-          </div>
-        ))}
+              <div
+                className={`inline-block max-w-[85%] rounded-lg px-3 py-2 text-xs leading-relaxed ${
+                  msg.role === 'user'
+                    ? 'bg-primary/20 text-foreground border border-primary/20'
+                    : 'bg-secondary/50 text-foreground border border-border'
+                }`}
+              >
+                {msg.content}
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
       <div className="border-t border-border p-3">
         <div className="flex items-end gap-2">
           <textarea
@@ -152,17 +168,17 @@ export function AIChatPanel() {
             onKeyDown={handleKeyDown}
             placeholder="Ask AI about your architecture..."
             rows={1}
-            className="flex-1 resize-none rounded-lg border border-input bg-background px-3 py-2 text-xs outline-none focus:border-ring"
+            className="flex-1 resize-none rounded-md border border-input bg-background px-2.5 py-2 text-xs outline-none focus:border-ring transition-colors duration-150 placeholder:text-muted-foreground/50"
           />
           {isGenerating ? (
-            <button className="rounded-lg bg-destructive p-2 text-destructive-foreground">
+            <button className="rounded-md bg-destructive p-2 text-destructive-foreground hover:bg-destructive/90 transition-colors duration-150 cursor-pointer">
               <StopCircle className="h-4 w-4" />
             </button>
           ) : (
             <button
               onClick={handleSubmit}
               disabled={!input.trim()}
-              className="rounded-lg bg-primary p-2 text-primary-foreground disabled:opacity-50"
+              className="rounded-md bg-primary p-2 text-primary-foreground hover:bg-primary/90 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <Send className="h-4 w-4" />
             </button>
