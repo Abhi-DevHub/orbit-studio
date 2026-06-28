@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { router, protectedProcedure } from '../trpc';
 import { Orchestrator } from '@orbit/ai';
+import type { ArchitectureNode } from '@orbit/config';
 
 const orchestrator = new Orchestrator();
 
@@ -23,15 +24,16 @@ export const aiRouter = router({
         existingEdges: input.existingEdges,
       });
 
-      await ctx.db.aIConversation.create({
+      await ctx.db.aiConversation.create({
         data: {
           projectId: input.projectId,
+          userId: ctx.session.id,
           messages: [
             { role: 'user', content: input.prompt },
             { role: 'assistant', content: result.explanation, data: result },
           ],
         },
-      });
+      } as any);
 
       return result;
     }),
@@ -68,8 +70,10 @@ export const aiRouter = router({
         where: { projectId: input.projectId },
         orderBy: { version: 'desc' },
       });
-      const node = state?.nodes?.find((n: any) => n.id === input.nodeId);
-      if (!node) throw new Error('Node not found');
+      const nodes = state?.nodes as unknown as Array<Record<string, unknown>> | undefined;
+      const rawNode = nodes?.find((n) => n.id === input.nodeId);
+      if (!rawNode) throw new Error('Node not found');
+      const node = rawNode as unknown as ArchitectureNode;
 
       return agent.explain(node);
     }),

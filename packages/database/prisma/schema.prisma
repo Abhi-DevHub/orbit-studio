@@ -1,6 +1,5 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["rowLevelSecurity"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -104,11 +103,13 @@ model Collaboration {
 model AiConversation {
   id        String   @id @default(cuid())
   projectId String
+  userId    String
   messages  Json     @default("[]")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // ─── Templates ───────────────────────────────────────
