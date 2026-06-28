@@ -1,0 +1,35 @@
+{
+  "name": "orbit-studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-native software architecture platform",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "clean": "turbo clean",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
+    "db:generate": "pnpm --filter @orbit/database db:generate",
+    "db:migrate": "pnpm --filter @orbit/database db:migrate",
+    "db:push": "pnpm --filter @orbit/database db:push",
+    "db:seed": "pnpm --filter @orbit/database db:seed",
+    "db:studio": "pnpm --filter @orbit/database db:studio"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "prettier": "^3.2.0",
+    "prettier-plugin-tailwindcss": "^0.6.0",
+    "typescript": "^5.5.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "@eslint/js": "^9.0.0"
+  },
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
