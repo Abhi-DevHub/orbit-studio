@@ -1,11 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import {
   ReactFlow,
   Background,
   Controls,
   MiniMap,
+  useKeyPress,
   type Node,
   type Edge,
   type Connection,
@@ -14,7 +15,7 @@ import {
   BackgroundVariant,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { ArrowLeft, Sparkles, MessageSquare, Settings, Download, Undo2, Redo2, Save, PanelRightOpen, PanelRightClose } from 'lucide-react';
+import { ArrowLeft, Sparkles, MessageSquare, Settings, Download, Undo2, Redo2, Save, PanelRightOpen, PanelRightClose, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCanvasStore } from '@/stores/canvas-store';
 import { useUIStore } from '@/stores/ui-store';
@@ -38,10 +39,12 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
-  const { selectedNode, selectNode, undo, redo } = useCanvasStore();
+  const reactFlowInstance = useRef<any>(null);
+  const { selectedNode, selectNode, removeNode, removeEdge, undo, redo } = useCanvasStore();
   const { sidebarOpen, rightPanelOpen, toggleSidebar, toggleRightPanel, activeRightPanel, setActiveRightPanel } = useUIStore();
   const { suggestions } = useAIStore();
+
+  const deletePressed = useKeyPress(['Delete', 'Backspace']);
 
   const template = templateId ? TEMPLATES_DATA[templateId] : null;
   const projectName = template ? template.name : projectId === 'new' ? 'Untitled Project' : `Project ${projectId}`;
@@ -52,6 +55,12 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
       setEdges(template.edges);
     }
   }, [templateId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (deletePressed && selectedNode) {
+      removeNode(selectedNode);
+    }
+  }, [deletePressed, selectedNode, removeNode]);
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -70,9 +79,9 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
     (event: React.DragEvent) => {
       event.preventDefault();
       const type = event.dataTransfer.getData('application/reactflow');
-      if (!type || !reactFlowInstance) return;
+      if (!type || !reactFlowInstance.current) return;
 
-      const position = reactFlowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      const position = reactFlowInstance.current.screenToFlowPosition({ x: event.clientX, y: event.clientY });
       const newNode: Node = {
         id: `node_${Date.now()}`,
         type: 'archNode',
@@ -85,7 +94,7 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
       };
       setNodes((nds) => [...nds, newNode]);
     },
-    [reactFlowInstance, setNodes],
+    [setNodes],
   );
 
   return (
@@ -115,6 +124,18 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
           <button className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200" title="Export">
             <Download className="h-3.5 w-3.5" />
           </button>
+          {selectedNode && (
+            <>
+              <div className="mx-1.5 h-4 w-px bg-border" />
+              <button
+                onClick={() => removeNode(selectedNode)}
+                className="rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200"
+                title="Delete node"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </>
+          )}
           <div className="mx-1.5 h-4 w-px bg-border" />
           <button
             onClick={() => { setActiveRightPanel('ai'); if (!rightPanelOpen) toggleRightPanel(); }}
@@ -140,10 +161,11 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
-            onInit={setReactFlowInstance}
+            onInit={(instance) => { reactFlowInstance.current = instance; }}            
             onDragOver={onDragOver}
             onDrop={onDrop}
             onNodeClick={(_, node) => selectNode(node.id)}
+            onEdgeClick={(_, edge) => removeEdge(edge.id)}
             onPaneClick={() => selectNode(null)}
             nodeTypes={nodeTypes}
             fitView
