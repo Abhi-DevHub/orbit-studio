@@ -64,7 +64,7 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      const newEdge: Edge = { ...connection, id: `edge_${Date.now()}`, type: 'smoothstep', style: { stroke: '#334155', strokeWidth: 1 } };
+      const newEdge: Edge = { ...connection, id: `edge_${Date.now()}`, type: 'smoothstep', style: { stroke: '#B9915E', strokeWidth: 1 } };
       setEdges((eds) => [...eds, newEdge]);
     },
     [setEdges],
@@ -171,18 +171,18 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
             fitView
             defaultEdgeOptions={{
               type: 'smoothstep',
-              style: { stroke: '#334155', strokeWidth: 1 },
+              style: { stroke: '#B9915E', strokeWidth: 1 },
             }}
           >
-            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="hsl(0 0% 14%)" />
+            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#B9915E" />
             <Controls className="!bg-card !border-border !rounded-lg !shadow-none" />
             <MiniMap
               className="!bg-card !border-border !rounded-lg !shadow-none"
               nodeColor={(n) => {
                 const colors: Record<string, string> = { database: '#22c55e', gateway: '#8b5cf6', backend: '#6366f1', frontend: '#3b82f6', cache: '#14b8a6', auth: '#ef4444' };
-                return colors[n.data?.type as string] || '#334155';
+                return colors[n.data?.type as string] || '#B9915E';
               }}
-              maskColor="rgba(250, 245, 240, 0.85)"
+              maskColor="rgba(237, 235, 222, 0.85)"
             />
           </ReactFlow>
 
