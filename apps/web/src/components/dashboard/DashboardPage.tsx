@@ -8,10 +8,10 @@ import { cn } from '@/lib/utils';
 import { APP_NAME } from '@/lib/constants';
 
 const MOCK_PROJECTS = [
-  { id: '1', name: 'Healthcare SaaS Platform', description: 'Multi-tenant healthcare platform with AI diagnostics', updatedAt: '2026-06-28T10:00:00Z', nodeCount: 12 },
-  { id: '2', name: 'Netflix Clone', description: 'Video streaming platform with microservices', updatedAt: '2026-06-27T15:30:00Z', nodeCount: 9 },
-  { id: '3', name: 'Banking API', description: 'Fintech API with transaction processing', updatedAt: '2026-06-26T09:00:00Z', nodeCount: 7 },
-  { id: '4', name: 'Real-time Chat App', description: 'WebSocket-based messaging platform', updatedAt: '2026-06-25T14:00:00Z', nodeCount: 5 },
+  { id: 'healthcare', name: 'Healthcare SaaS Platform', description: 'Multi-tenant healthcare platform with AI diagnostics', updatedAt: '2026-06-28T10:00:00Z', nodeCount: 12 },
+  { id: 'netflix-clone', name: 'Netflix Clone', description: 'Video streaming platform with microservices', updatedAt: '2026-06-27T15:30:00Z', nodeCount: 9 },
+  { id: 'banking-api', name: 'Banking API', description: 'Fintech API with transaction processing', updatedAt: '2026-06-26T09:00:00Z', nodeCount: 7 },
+  { id: 'ai-chatbot', name: 'AI Chatbot', description: 'LLM-powered chatbot platform', updatedAt: '2026-06-25T14:00:00Z', nodeCount: 5 },
 ];
 
 const containerVariants = {
@@ -206,7 +206,7 @@ export function DashboardPage() {
                     transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1], delay: 0.3 + i * 0.06 }}
                     whileHover={{ scale: 1.005, x: 2 }}
                     whileTap={{ scale: 0.995 }}
-                    onClick={() => router.push(`/project/${project.id}`)}
+                    onClick={() => router.push(`/project/${project.id}?template=${project.id}`)}
                     className="w-full rounded-xl border border-border bg-card p-3.5 text-left transition-all duration-200 hover:border-primary/20 hover:bg-secondary/30 group"
                   >
                     <div className="flex items-center justify-between">

@@ -98,7 +98,7 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
   );
 
   return (
-    <div className="flex h-dvh flex-col bg-[#050505]">
+    <div className="flex h-dvh flex-col bg-background">
       <header className="flex h-11 items-center justify-between border-b border-border px-3">
         <div className="flex items-center gap-2">
           <button
@@ -182,7 +182,7 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
                 const colors: Record<string, string> = { database: '#22c55e', gateway: '#8b5cf6', backend: '#6366f1', frontend: '#3b82f6', cache: '#14b8a6', auth: '#ef4444' };
                 return colors[n.data?.type as string] || '#334155';
               }}
-              maskColor="rgba(5, 5, 5, 0.85)"
+              maskColor="rgba(250, 245, 240, 0.85)"
             />
           </ReactFlow>
 

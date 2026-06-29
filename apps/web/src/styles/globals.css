@@ -3,26 +3,26 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --color-background: hsl(0 0% 2%);
-  --color-foreground: hsl(0 0% 95%);
-  --color-card: hsl(0 0% 5%);
-  --color-card-foreground: hsl(0 0% 95%);
-  --color-primary: hsl(196 100% 50%);
-  --color-primary-foreground: hsl(0 0% 2%);
-  --color-secondary: hsl(0 0% 10%);
-  --color-secondary-foreground: hsl(0 0% 95%);
-  --color-accent: hsl(142 70% 50%);
-  --color-accent-foreground: hsl(0 0% 2%);
-  --color-destructive: hsl(0 85% 60%);
-  --color-destructive-foreground: hsl(0 0% 95%);
-  --color-muted: hsl(0 0% 12%);
-  --color-muted-foreground: hsl(0 0% 45%);
-  --color-border: hsl(0 0% 14%);
-  --color-input: hsl(0 0% 12%);
-  --color-ring: hsl(196 100% 50%);
+  --color-background: hsl(40 23% 97%);
+  --color-foreground: hsl(240 6% 13%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(240 6% 13%);
+  --color-primary: hsl(180 55% 30%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(40 15% 90%);
+  --color-secondary-foreground: hsl(240 6% 13%);
+  --color-accent: hsl(30 85% 50%);
+  --color-accent-foreground: hsl(0 0% 100%);
+  --color-destructive: hsl(0 72% 51%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-muted: hsl(40 12% 88%);
+  --color-muted-foreground: hsl(40 8% 50%);
+  --color-border: hsl(40 15% 86%);
+  --color-input: hsl(40 15% 86%);
+  --color-ring: hsl(180 55% 30%);
 
-  --color-canvas-dot: hsl(0 0% 14%);
-  --color-surface-elevated: hsl(0 0% 8%);
+  --color-canvas-dot: hsl(40 15% 82%);
+  --color-surface-elevated: hsl(0 0% 100%);
 
   --radius: 0.75rem;
   --radius-sm: 0.5rem;
@@ -36,7 +36,7 @@
 }
 
 ::selection {
-  background: hsl(196 100% 50% / 0.2);
+  background: hsl(180 55% 30% / 0.12);
   color: var(--color-foreground);
 }
 
@@ -48,7 +48,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom scrollbar - ultra thin, minimal */
 ::-webkit-scrollbar {
   width: 4px;
   height: 4px;
@@ -64,7 +63,6 @@ body {
   background: var(--color-muted-foreground);
 }
 
-/* React Flow overrides */
 .react-flow__background {
   background-color: var(--color-background) !important;
 }
@@ -103,9 +101,8 @@ body {
   transform: scale(1.3) !important;
 }
 
-/* Double-bezel card pattern */
 .card-shell {
-  background: hsl(0 0% 8%);
+  background: hsl(40 15% 90%);
   border: 0.5px solid var(--color-border);
   border-radius: var(--radius-2xl);
   padding: 1.5px;
@@ -113,16 +110,14 @@ body {
 .card-core {
   background: var(--color-card);
   border-radius: calc(var(--radius-2xl) - 1.5px);
-  box-shadow: inset 0 1px 1px rgb(255 255 255 / 0.04);
+  box-shadow: inset 0 1px 1px rgb(255 255 255 / 0.6);
 }
 
-/* Focus ring */
 *:focus-visible {
   outline: none;
   ring: 1px solid var(--color-ring);
 }
 
-/* Input reset */
 input, select, textarea, button {
   font-family: inherit;
 }
