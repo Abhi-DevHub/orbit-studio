@@ -5,11 +5,11 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, User, Palette, Cpu } from 'lucide-react';
 
 const sectionVariants = {
-  hidden: { opacity: 0, y: 16, filter: 'blur(4px)' },
+  hidden: { opacity: 0, y: 16, scale: 0.98 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    filter: 'blur(0px)',
+    scale: 1,
     transition: { duration: 0.6, ease: [0.32, 0.72, 0, 1], delay: 0.1 + i * 0.08 },
   }),
 };

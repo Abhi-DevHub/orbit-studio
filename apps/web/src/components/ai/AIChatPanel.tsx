@@ -41,8 +41,8 @@ export function AIChatPanel() {
           {messages.map((msg) => (
             <motion.div
               key={msg.id}
-              initial={{ opacity: 0, y: 8, filter: 'blur(2px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              initial={{ opacity: 0, y: 8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
               className={`flex gap-2.5 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
             >
