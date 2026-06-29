@@ -67,7 +67,7 @@ export function DashboardPage() {
           <span className="text-sm font-medium tracking-tight">{APP_NAME}</span>
         </div>
         <div className="flex items-center gap-2">
-          <button className="rounded-md px-3 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200">
+          <button onClick={() => router.push('/sign-in')} className="rounded-md px-3 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200">
             Sign In
           </button>
         </div>

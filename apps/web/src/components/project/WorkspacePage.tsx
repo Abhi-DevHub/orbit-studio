@@ -1,22 +1,20 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
   Controls,
   MiniMap,
   useKeyPress,
+  BackgroundVariant,
   type Node,
   type Edge,
-  type Connection,
-  useNodesState,
-  useEdgesState,
-  BackgroundVariant,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { ArrowLeft, Sparkles, MessageSquare, Settings, Download, Undo2, Redo2, Save, PanelRightOpen, PanelRightClose, Trash2 } from 'lucide-react';
+import { ArrowLeft, Sparkles, MessageSquare, Settings, Download, Undo2, Redo2, Save, PanelRightOpen, PanelRightClose, Trash2, Image, FileJson, FileType } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { toPng, toSvg } from 'html-to-image';
 import { useCanvasStore } from '@/stores/canvas-store';
 import { useUIStore } from '@/stores/ui-store';
 import { useAIStore } from '@/stores/ai-store';
@@ -37,12 +35,19 @@ interface WorkspacePageProps {
 export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
   const router = useRouter();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const reactFlowInstance = useRef<any>(null);
-  const { selectedNode, selectNode, removeNode, removeEdge, undo, redo } = useCanvasStore();
+  const [showExportMenu, setShowExportMenu] = useState(false);
+
+  const {
+    nodes, edges, selectedNode, selectNode,
+    onNodesChange, onEdgesChange, onConnect,
+    addNode, removeNode, removeEdge, undo, redo,
+    isSaving, lastSaved, hydrate, toJson, fromJson,
+    setIsSaving, setLastSaved,
+  } = useCanvasStore();
+
   const { sidebarOpen, rightPanelOpen, toggleSidebar, toggleRightPanel, activeRightPanel, setActiveRightPanel } = useUIStore();
-  const { suggestions } = useAIStore();
+  const { suggestions, setPipelineStatus, addMessage, runPipeline } = useAIStore();
 
   const deletePressed = useKeyPress(['Delete', 'Backspace']);
 
@@ -51,24 +56,18 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
 
   useEffect(() => {
     if (template) {
-      setNodes(template.nodes);
-      setEdges(template.edges);
+      hydrate(template.nodes, template.edges);
+    } else {
+      const saved = localStorage.getItem(`orbit-project-${projectId}`);
+      if (saved) fromJson(saved);
     }
-  }, [templateId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [templateId, projectId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (deletePressed && selectedNode) {
       removeNode(selectedNode);
     }
   }, [deletePressed, selectedNode, removeNode]);
-
-  const onConnect = useCallback(
-    (connection: Connection) => {
-      const newEdge: Edge = { ...connection, id: `edge_${Date.now()}`, type: 'smoothstep', style: { stroke: '#B9915E', strokeWidth: 1 } };
-      setEdges((eds) => [...eds, newEdge]);
-    },
-    [setEdges],
-  );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -80,7 +79,6 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
       event.preventDefault();
       const type = event.dataTransfer.getData('application/reactflow');
       if (!type || !reactFlowInstance.current) return;
-
       const position = reactFlowInstance.current.screenToFlowPosition({ x: event.clientX, y: event.clientY });
       const newNode: Node = {
         id: `node_${Date.now()}`,
@@ -92,10 +90,52 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
           metadata: { status: 'planned' },
         },
       };
-      setNodes((nds) => [...nds, newNode]);
+      addNode(newNode);
     },
-    [setNodes],
+    [addNode],
   );
+
+  function handleSave() {
+    setIsSaving(true);
+    const json = toJson();
+    localStorage.setItem(`orbit-project-${projectId}`, json);
+    setLastSaved(new Date());
+    setTimeout(() => setIsSaving(false), 600);
+  }
+
+  async function handleExportPng() {
+    const el = reactFlowWrapper.current?.querySelector('.react-flow__renderer');
+    if (!el) return;
+    const dataUrl = await toPng(el as HTMLElement, { backgroundColor: '#FEFAEF', pixelRatio: 2 });
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = `${projectName.replace(/\s+/g, '-').toLowerCase()}.png`;
+    a.click();
+    setShowExportMenu(false);
+  }
+
+  async function handleExportSvg() {
+    const el = reactFlowWrapper.current?.querySelector('.react-flow__renderer');
+    if (!el) return;
+    const dataUrl = await toSvg(el as HTMLElement, { backgroundColor: '#FEFAEF', pixelRatio: 2 });
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = `${projectName.replace(/\s+/g, '-').toLowerCase()}.svg`;
+    a.click();
+    setShowExportMenu(false);
+  }
+
+  function handleExportJson() {
+    const json = toJson();
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${projectName.replace(/\s+/g, '-').toLowerCase()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setShowExportMenu(false);
+  }
 
   return (
     <div className="flex h-dvh flex-col bg-background">
@@ -108,22 +148,48 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
             <ArrowLeft className="h-3.5 w-3.5" />
           </button>
           <span className="text-xs font-medium">{projectName}</span>
-          <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground border border-border">Draft</span>
+          <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground border border-border">
+            {isSaving ? 'Saving...' : lastSaved ? 'Saved' : 'Draft'}
+          </span>
         </div>
         <div className="flex items-center gap-0.5">
-          <button onClick={() => undo()} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200" title="Undo">
+          <button onClick={() => undo()} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200" title="Undo (⌘Z)">
             <Undo2 className="h-3.5 w-3.5" />
           </button>
-          <button onClick={() => redo()} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200" title="Redo">
+          <button onClick={() => redo()} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200" title="Redo (⌘⇧Z)">
             <Redo2 className="h-3.5 w-3.5" />
           </button>
           <div className="mx-1.5 h-4 w-px bg-border" />
-          <button className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200" title="Save">
+
+          <button onClick={handleSave} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200" title="Save">
             <Save className="h-3.5 w-3.5" />
           </button>
-          <button className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200" title="Export">
-            <Download className="h-3.5 w-3.5" />
-          </button>
+
+          <div className="relative">
+            <button onClick={() => setShowExportMenu(!showExportMenu)} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200" title="Export">
+              <Download className="h-3.5 w-3.5" />
+            </button>
+            {showExportMenu && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowExportMenu(false)} />
+                <div className="absolute right-0 top-full z-20 mt-1 w-40 rounded-xl border border-border bg-card p-1.5 shadow-lg">
+                  <button onClick={handleExportPng} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200">
+                    <Image className="h-3.5 w-3.5" />
+                    Export PNG
+                  </button>
+                  <button onClick={handleExportSvg} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200">
+                    <FileType className="h-3.5 w-3.5" />
+                    Export SVG
+                  </button>
+                  <button onClick={handleExportJson} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200">
+                    <FileJson className="h-3.5 w-3.5" />
+                    Export JSON
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
           {selectedNode && (
             <>
               <div className="mx-1.5 h-4 w-px bg-border" />
@@ -138,7 +204,7 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
           )}
           <div className="mx-1.5 h-4 w-px bg-border" />
           <button
-            onClick={() => { setActiveRightPanel('ai'); if (!rightPanelOpen) toggleRightPanel(); }}
+            onClick={() => { setActiveRightPanel('ai'); if (!rightPanelOpen) toggleRightPanel(); runPipeline(); }}
             className="flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1.5 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 transition-all duration-200"
           >
             <Sparkles className="h-3 w-3" />
@@ -161,7 +227,7 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
-            onInit={(instance) => { reactFlowInstance.current = instance; }}            
+            onInit={(instance) => { reactFlowInstance.current = instance; }}
             onDragOver={onDragOver}
             onDrop={onDrop}
             onNodeClick={(_, node) => selectNode(node.id)}
@@ -232,8 +298,7 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
 
             <div className="flex-1 overflow-y-auto">
               {activeRightPanel === 'properties' && <PropertiesPanel />}
-              {activeRightPanel === 'chat' && <AIChatPanel />}
-              {activeRightPanel === 'ai' && <AIChatPanel />}
+              {activeRightPanel !== 'properties' && <AIChatPanel />}
             </div>
           </aside>
         )}
