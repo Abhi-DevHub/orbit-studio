@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, LayoutTemplate, Clock, ArrowRight, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, LayoutTemplate, Sparkles, Clock, ArrowRight, Upload, PanelRightClose, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { APP_NAME } from '@/lib/constants';
 
@@ -12,6 +13,34 @@ const MOCK_PROJECTS = [
   { id: '3', name: 'Banking API', description: 'Fintech API with transaction processing', updatedAt: '2026-06-26T09:00:00Z', nodeCount: 7 },
   { id: '4', name: 'Real-time Chat App', description: 'WebSocket-based messaging platform', updatedAt: '2026-06-25T14:00:00Z', nodeCount: 5 },
 ];
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06, delayChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 16, filter: 'blur(4px)' },
+  visible: {
+    opacity: 1,
+    y: 0,
+    filter: 'blur(0px)',
+    transition: { duration: 0.7, ease: [0.32, 0.72, 0, 1] },
+  },
+};
+
+const scaleVariants = {
+  hidden: { opacity: 0, scale: 0.95, y: 8 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: [0.32, 0.72, 0, 1] },
+  },
+};
 
 export function DashboardPage() {
   const router = useRouter();
@@ -24,182 +53,183 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col">
-      {/* Top Navigation */}
-      <header className="flex h-14 items-center justify-between border-b border-border px-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
+    <div className="flex min-h-dvh flex-col">
+      <motion.header
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+        className="flex h-12 items-center justify-between border-b border-border px-5"
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
           </div>
-          <span className="text-lg font-semibold">{APP_NAME}</span>
+          <span className="text-sm font-medium tracking-tight">{APP_NAME}</span>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+        <div className="flex items-center gap-2">
+          <button className="rounded-md px-3 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200">
             Sign In
           </button>
         </div>
-      </header>
+      </motion.header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <aside className="w-56 border-r border-border p-4">
-          <nav className="space-y-1">
+        <motion.aside
+          initial={{ opacity: 0, x: -12 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1], delay: 0.1 }}
+          className="w-48 border-r border-border p-3 hidden md:flex flex-col"
+        >
+          <nav className="space-y-0.5">
             {[
-              { label: 'Dashboard', href: '/', icon: LayoutDashboardIcon, active: true },
+              { label: 'Dashboard', href: '/', icon: PanelRightClose, active: true },
               { label: 'Templates', href: '/templates', icon: LayoutTemplate, active: false },
-              { label: 'Settings', href: '/settings', icon: SettingsIcon, active: false },
+              { label: 'Settings', href: '/settings', icon: Settings, active: false },
             ].map((item) => (
               <a
                 key={item.label}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors',
+                  'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs transition-all duration-200',
                   item.active
-                    ? 'bg-secondary text-foreground'
-                    : 'text-muted-foreground hover:bg-secondary/50',
+                    ? 'bg-secondary text-foreground font-medium'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50',
                 )}
               >
-                <item.icon className="h-4 w-4" />
+                <item.icon className="h-3.5 w-3.5" />
                 {item.label}
               </a>
             ))}
           </nav>
-        </aside>
+        </motion.aside>
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-auto p-6">
-          <div className="mx-auto max-w-5xl">
-            {/* Header */}
-            <div className="mb-8 flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold">Dashboard</h1>
-                <p className="text-sm text-muted-foreground">Manage your architecture projects</p>
-              </div>
-              <button
-                onClick={() => setShowNewProject(true)}
-                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                <Plus className="h-4 w-4" />
-                New Project
-              </button>
-            </div>
-
-            {/* New Project Dialog */}
-            {showNewProject && (
-              <div className="mb-6 rounded-lg border border-border bg-card p-4">
-                <h3 className="mb-3 text-sm font-medium">Create New Project</h3>
-                <div className="flex gap-3">
-                  <input
-                    type="text"
-                    placeholder="Project name..."
-                    value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                    className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
-                    onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()}
-                  />
-                  <button
-                    onClick={handleCreateProject}
-                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                  >
-                    Create
-                  </button>
-                  <button
-                    onClick={() => setShowNewProject(false)}
-                    className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-secondary"
-                  >
-                    Cancel
-                  </button>
+        <motion.main
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="flex-1 overflow-auto"
+        >
+          <div className="mx-auto max-w-4xl px-6 py-10">
+            <motion.div variants={itemVariants} className="mb-10">
+              <span className="inline-block rounded-full border border-border bg-secondary/50 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground mb-3">
+                Workspace
+              </span>
+              <div className="flex items-end justify-between">
+                <div>
+                  <h1 className="text-2xl font-semibold tracking-tight">Your projects</h1>
+                  <p className="text-sm text-muted-foreground mt-0.5">Manage and design your system architectures</p>
                 </div>
-              </div>
-            )}
-
-            {/* Quick Actions */}
-            <div className="mb-8 grid grid-cols-3 gap-4">
-              {[
-                { label: 'New from Template', icon: LayoutTemplate, action: () => router.push('/templates') },
-                { label: 'AI Architect', icon: Sparkles, action: () => setShowNewProject(true) },
-                { label: 'Import Architecture', icon: UploadIcon, action: () => {} },
-              ].map((action) => (
-                <button
-                  key={action.label}
-                  onClick={action.action}
-                  className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 text-left transition-colors hover:bg-secondary/50"
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowNewProject(true)}
+                  className="flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 transition-all duration-200"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
-                    <action.icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium">{action.label}</div>
-                    <div className="text-xs text-muted-foreground">Get started quickly</div>
-                  </div>
-                </button>
-              ))}
-            </div>
+                  <Plus className="h-3.5 w-3.5" />
+                  New Project
+                </motion.button>
+              </div>
+            </motion.div>
 
-            {/* Recent Projects */}
-            <div className="mb-6">
+            <AnimatePresence>
+              {showNewProject && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                  transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+                  className="mb-6 rounded-xl border border-border bg-card p-4"
+                >
+                  <h3 className="mb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Create new project</h3>
+                  <div className="flex gap-2.5">
+                    <input
+                      type="text"
+                      placeholder="Project name..."
+                      value={projectName}
+                      onChange={(e) => setProjectName(e.target.value)}
+                      className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring/50 transition-colors duration-200 placeholder:text-muted-foreground/40"
+                      onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()}
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleCreateProject}
+                      className="rounded-lg bg-primary px-3.5 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-all duration-200"
+                    >
+                      Create
+                    </button>
+                    <button
+                      onClick={() => setShowNewProject(false)}
+                      className="rounded-lg border border-border px-3.5 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <motion.div variants={itemVariants} className="mb-10 grid grid-cols-3 gap-2.5">
+              {[
+                { label: 'From Template', icon: LayoutTemplate, action: () => router.push('/templates'), desc: 'Pre-built architectures' },
+                { label: 'AI Architect', icon: Sparkles, action: () => setShowNewProject(true), desc: 'Describe what you need' },
+                { label: 'Import', icon: Upload, action: () => {}, desc: 'JSON / YAML file' },
+              ].map((action) => (
+                <motion.button
+                  key={action.label}
+                  whileHover={{ scale: 1.02, y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={action.action}
+                  className="group rounded-xl border border-border bg-card p-4 text-left transition-all duration-200 hover:border-primary/20 hover:bg-secondary/30"
+                >
+                  <div className="mb-2.5 flex h-8 w-8 items-center justify-center rounded-lg bg-secondary group-hover:bg-primary/10 transition-colors duration-200">
+                    <action.icon className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors duration-200" />
+                  </div>
+                  <div className="text-xs font-medium mb-0.5">{action.label}</div>
+                  <div className="text-[10px] text-muted-foreground">{action.desc}</div>
+                </motion.button>
+              ))}
+            </motion.div>
+
+            <motion.div variants={itemVariants}>
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Recent Projects</h2>
-                <button className="flex items-center gap-1 text-sm text-primary hover:underline">
+                <h2 className="text-sm font-medium">Recent projects</h2>
+                <button className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors duration-200">
                   View all <ArrowRight className="h-3 w-3" />
                 </button>
               </div>
-              <div className="space-y-3">
-                {MOCK_PROJECTS.map((project) => (
-                  <button
+              <div className="space-y-2">
+                {MOCK_PROJECTS.map((project, i) => (
+                  <motion.button
                     key={project.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1], delay: 0.3 + i * 0.06 }}
+                    whileHover={{ scale: 1.005, x: 2 }}
+                    whileTap={{ scale: 0.995 }}
                     onClick={() => router.push(`/project/${project.id}`)}
-                    className="w-full rounded-lg border border-border bg-card p-4 text-left transition-colors hover:bg-secondary/50"
+                    className="w-full rounded-xl border border-border bg-card p-3.5 text-left transition-all duration-200 hover:border-primary/20 hover:bg-secondary/30 group"
                   >
                     <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium">{project.name}</h3>
-                        <p className="text-sm text-muted-foreground">{project.description}</p>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-medium truncate">{project.name}</h3>
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">{project.description}</p>
                       </div>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span>{project.nodeCount} components</span>
-                        <Clock className="h-3 w-3" />
-                        <span>{formatRelativeTime(project.updatedAt)}</span>
+                      <div className="flex items-center gap-3 text-[10px] text-muted-foreground shrink-0 ml-4">
+                        <span className="hidden sm:inline">{project.nodeCount} components</span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {formatRelativeTime(project.updatedAt)}
+                        </span>
                       </div>
                     </div>
-                  </button>
+                  </motion.button>
                 ))}
               </div>
-            </div>
+            </motion.div>
           </div>
-        </main>
+        </motion.main>
       </div>
     </div>
-  );
-}
-
-function LayoutDashboardIcon(props: any) {
-  return (
-    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect width="7" height="9" x="3" y="3" rx="1" />
-      <rect width="7" height="5" x="14" y="3" rx="1" />
-      <rect width="7" height="9" x="14" y="12" rx="1" />
-      <rect width="7" height="5" x="3" y="16" rx="1" />
-    </svg>
-  );
-}
-
-function SettingsIcon(props: any) {
-  return (
-    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
-
-function UploadIcon(props: any) {
-  return (
-    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-      <polyline points="17 8 12 3 7 8" />
-      <line x1="12" x2="12" y1="3" y2="15" />
-    </svg>
   );
 }
 

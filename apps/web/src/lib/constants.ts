@@ -39,7 +39,7 @@ export const NODE_LIBRARY_CATEGORIES = [
     name: 'Network',
     items: [
       { type: 'gateway', label: 'API Gateway', icon: 'Waypoints' },
-      { type: 'api', label: 'API', icon: 'Api' },
+      { type: 'api', label: 'API', icon: 'Network' },
       { type: 'cdn', label: 'CDN', icon: 'Globe' },
       { type: 'webhook', label: 'Webhook', icon: 'Webhook' },
     ],

@@ -1,153 +1,68 @@
 'use client';
 
+import { MousePointer2, Sparkles } from 'lucide-react';
 import { useCanvasStore } from '@/stores/canvas-store';
-import { useAIStore } from '@/stores/ai-store';
-import { Sparkles, Trash2, Copy, Info } from 'lucide-react';
 
 export function PropertiesPanel() {
-  const { nodes, selectedNode, updateNode, removeNode } = useCanvasStore();
-  const { addMessage } = useAIStore();
-
+  const { selectedNode, nodes } = useCanvasStore();
   const node = nodes.find((n) => n.id === selectedNode);
 
   if (!node) {
     return (
-      <div className="flex h-full items-center justify-center p-6">
-        <div className="text-center">
-          <div className="mb-2 text-2xl text-muted-foreground">□</div>
-          <p className="text-sm text-muted-foreground">Select a component to edit its properties</p>
-          <p className="mt-1 text-xs text-muted-foreground/60">Click on any node in the canvas</p>
+      <div className="flex h-full flex-col items-center justify-center p-6 text-center">
+        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">
+          <MousePointer2 className="h-5 w-5 text-muted-foreground" />
         </div>
+        <p className="text-xs font-medium text-muted-foreground">No node selected</p>
+        <p className="mt-1 text-[10px] text-muted-foreground/60">Click a node on the canvas to inspect its properties</p>
       </div>
     );
   }
 
-  const data = node.data as Record<string, unknown>;
-  const nodeType = (data?.type as string) || 'custom';
-  const label = (data?.label as string) || 'Untitled';
-
   return (
-    <div className="p-4">
-      {/* Header */}
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-medium">{label}</h3>
-          <span className="text-xs capitalize text-muted-foreground">{nodeType}</span>
-        </div>
-        <div className="flex gap-1">
-          <button
-            onClick={() => addMessage({ id: Date.now().toString(), role: 'user', content: `Explain the ${label} component`, timestamp: new Date() })}
-            className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
-            title="Explain"
-          >
-            <Info className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => {
-              if (selectedNode) {
-                const newNode = { ...node, id: `node_${Date.now()}` };
-                // Clone logic
-              }
-            }}
-            className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
-            title="Duplicate"
-          >
-            <Copy className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => selectedNode && removeNode(selectedNode)}
-            className="rounded p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-            title="Delete"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
+    <div className="p-4 space-y-4">
+      <div>
+        <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Label</label>
+        <input
+          type="text"
+          defaultValue={node.data?.label as string}
+          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs outline-none focus:border-ring/50 transition-colors duration-200"
+        />
+      </div>
+      <div>
+        <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Type</label>
+        <input
+          type="text"
+          defaultValue={node.data?.type as string}
+          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs outline-none focus:border-ring/50 transition-colors duration-200"
+        />
+      </div>
+      <div>
+        <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Status</label>
+        <select
+          defaultValue={(node.data?.metadata as any)?.status || 'planned'}
+          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs outline-none focus:border-ring/50 transition-colors duration-200"
+        >
+          <option value="planned">Planned</option>
+          <option value="active">Active</option>
+          <option value="deprecated">Deprecated</option>
+        </select>
       </div>
 
-      {/* Properties */}
-      <div className="space-y-3">
-        <div>
-          <label className="mb-1 block text-xs text-muted-foreground">Name</label>
-          <input
-            type="text"
-            value={label}
-            onChange={(e) => selectedNode && updateNode(selectedNode, { data: { ...data, label: e.target.value } })}
-            className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-xs outline-none focus:border-ring"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-xs text-muted-foreground">Provider</label>
-          <input
-            type="text"
-            value={((data?.metadata as Record<string, unknown>)?.provider as string) || ''}
-            onChange={(e) =>
-              selectedNode &&
-              updateNode(selectedNode, {
-                data: { ...data, metadata: { ...(data?.metadata as Record<string, unknown>), provider: e.target.value } },
-              })
-            }
-            placeholder="AWS, GCP, Azure..."
-            className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-xs outline-none focus:border-ring"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-xs text-muted-foreground">Description</label>
-          <textarea
-            value={(data?.description as string) || ''}
-            onChange={(e) =>
-              selectedNode && updateNode(selectedNode, { data: { ...data, description: e.target.value } })
-            }
-            rows={3}
-            className="w-full resize-none rounded-lg border border-input bg-background px-3 py-1.5 text-xs outline-none focus:border-ring"
-          />
-        </div>
-
-        {/* Status */}
-        <div>
-          <label className="mb-1 block text-xs text-muted-foreground">Status</label>
-          <select
-            value={((data?.metadata as Record<string, unknown>)?.status as string) || 'planned'}
-            onChange={(e) =>
-              selectedNode &&
-              updateNode(selectedNode, {
-                data: { ...data, metadata: { ...(data?.metadata as Record<string, unknown>), status: e.target.value } },
-              })
-            }
-            className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-xs outline-none focus:border-ring"
-          >
-            <option value="planned">Planned</option>
-            <option value="active">Active</option>
-            <option value="deprecated">Deprecated</option>
-          </select>
-        </div>
-      </div>
-
-      {/* AI Actions */}
-      <div className="mt-6 rounded-lg border border-border bg-secondary/50 p-3">
-        <div className="mb-2 flex items-center gap-2 text-xs font-medium">
+      <div className="border-t border-border pt-4">
+        <div className="mb-3 flex items-center gap-2">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
-          AI Actions
+          <span className="text-xs font-medium">AI Actions</span>
         </div>
-        <div className="space-y-2">
-          <button
-            onClick={() => addMessage({ id: Date.now().toString(), role: 'user', content: `What are best practices for ${label}?`, timestamp: new Date() })}
-            className="w-full rounded-lg bg-secondary px-3 py-1.5 text-left text-xs text-muted-foreground hover:bg-secondary/80"
-          >
-            Best practices for {label}
+        <div className="space-y-1.5">
+          <button className="w-full rounded-lg border border-border bg-card px-3 py-2 text-left text-[11px] text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200">
+            Describe this component
           </button>
-          <button
-            onClick={() => addMessage({ id: Date.now().toString(), role: 'user', content: `What are alternatives to ${label}?`, timestamp: new Date() })}
-            className="w-full rounded-lg bg-secondary px-3 py-1.5 text-left text-xs text-muted-foreground hover:bg-secondary/80"
-          >
-            Alternatives to {label}
+          <button className="w-full rounded-lg border border-border bg-card px-3 py-2 text-left text-[11px] text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200">
+            Suggest connections
           </button>
-          <button
-            onClick={() => addMessage({ id: Date.now().toString(), role: 'user', content: `Show me cost estimates for ${label}`, timestamp: new Date() })}
-            className="w-full rounded-lg bg-secondary px-3 py-1.5 text-left text-xs text-muted-foreground hover:bg-secondary/80"
-          >
-            Cost estimates
+          <button className="w-full rounded-lg border border-border bg-card px-3 py-2 text-left text-[11px] text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200">
+            Generate Terraform
           </button>
         </div>
       </div>
