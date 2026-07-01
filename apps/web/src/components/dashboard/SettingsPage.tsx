@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft, User, Palette, Cpu } from 'lucide-react';
+import { useUIStore } from '@/stores/ui-store';
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 16, scale: 0.98 },
@@ -14,26 +15,10 @@ const sectionVariants = {
   }),
 };
 
-interface InputItem {
-  label: string;
-  type: 'input';
-  placeholder: string;
-  value: string;
-}
-
-interface SelectItem {
-  label: string;
-  type: 'select';
-  options: string[];
-  value: string;
-}
-
-type SettingsItem = InputItem | SelectItem;
-
 interface SettingsSection {
   icon: typeof User;
   label: string;
-  items: SettingsItem[];
+  items: { id: string; label: string; type: 'input' | 'select'; placeholder?: string; options?: string[]; value: string }[];
 }
 
 const SECTIONS: SettingsSection[] = [
@@ -41,28 +26,29 @@ const SECTIONS: SettingsSection[] = [
     icon: User,
     label: 'Profile',
     items: [
-      { label: 'Name', type: 'input', placeholder: 'Your name', value: '' },
-      { label: 'Email', type: 'input', placeholder: 'your@email.com', value: '' },
+      { id: 'name', label: 'Name', type: 'input', placeholder: 'Your name', value: '' },
+      { id: 'email', label: 'Email', type: 'input', placeholder: 'your@email.com', value: '' },
     ],
   },
   {
     icon: Palette,
     label: 'Appearance',
     items: [
-      { label: 'Theme', type: 'select', options: ['Light', 'Dark', 'System'], value: 'Light' },
+      { id: 'theme', label: 'Theme', type: 'select', options: ['Light', 'Dark', 'System'], value: 'Light' },
     ],
   },
   {
     icon: Cpu,
     label: 'AI Provider',
     items: [
-      { label: 'Default AI Model', type: 'select', options: ['Auto (recommended)', 'GPT-5', 'Gemini 2.5', 'Claude 4'], value: 'Auto (recommended)' },
+      { id: 'model', label: 'Default AI Model', type: 'select', options: ['Auto (recommended)', 'GPT-5', 'Gemini 2.5', 'Claude 4'], value: 'Auto (recommended)' },
     ],
   },
 ];
 
 export function SettingsPage() {
   const router = useRouter();
+  const { theme, setTheme } = useUIStore();
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -116,7 +102,7 @@ export function SettingsPage() {
                 </div>
                 <div className="space-y-3.5">
                   {section.items.map((item) => (
-                    <div key={item.label}>
+                    <div key={item.id}>
                       <label className="mb-1.5 block text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{item.label}</label>
                       {item.type === 'input' ? (
                         <input
@@ -126,8 +112,14 @@ export function SettingsPage() {
                           defaultValue={item.value}
                         />
                       ) : (
-                        <select className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring/50 transition-colors duration-200" defaultValue={item.value}>
-                          {item.options.map((opt) => (
+                        <select
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring/50 transition-colors duration-200"
+                          value={item.id === 'theme' ? theme.charAt(0).toUpperCase() + theme.slice(1) : item.value}
+                          onChange={(e) => {
+                            if (item.id === 'theme') setTheme(e.target.value.toLowerCase() as any);
+                          }}
+                        >
+                          {item.options?.map((opt) => (
                             <option key={opt}>{opt}</option>
                           ))}
                         </select>

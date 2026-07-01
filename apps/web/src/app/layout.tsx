@@ -9,9 +9,23 @@ export const metadata: Metadata = {
   description: 'Design, simulate, build, and deploy complete software systems with AI-powered architecture design.',
 };
 
+const themeScript = `
+  (function() {
+    try {
+      var t = localStorage.getItem('orbit-theme') || 'light';
+      var d = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var r = t === 'system' ? (d ? 'dark' : 'light') : t;
+      document.documentElement.classList.add(r);
+    } catch(e) {}
+  })();
+`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>
       </body>

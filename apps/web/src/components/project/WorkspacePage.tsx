@@ -13,7 +13,7 @@ import '@xyflow/react/dist/style.css';
 import {
   ArrowLeft, Sparkles, MessageSquare, Settings, Download, Undo2, Redo2,
   Save, PanelRightOpen, PanelRightClose, Trash2, Image, FileJson, FileType,
-  Code, Layout, FileText, Keyboard,
+  Code, Layout, FileText, Keyboard, Moon, Sun,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toPng, toSvg } from 'html-to-image';
@@ -27,6 +27,7 @@ import { DaCEditor } from '@/components/canvas/DaCEditor';
 import { CommandPalette } from '@/components/canvas/CommandPalette';
 import { ArchNode } from '@/components/canvas/nodes';
 import { TEMPLATES_DATA } from '@/lib/templates-data';
+import { autoLayout } from '@/lib/auto-layout';
 import { cn } from '@/lib/utils';
 import { ORBIT_EVENTS } from '@/lib/events';
 
@@ -57,21 +58,38 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
     setIsSaving, setLastSaved,
   } = useCanvasStore();
 
+  const get = useCanvasStore.getState;
+
   const {
     sidebarOpen, rightPanelOpen, toggleSidebar, toggleRightPanel,
     activeRightPanel, setActiveRightPanel, workspaceMode, setWorkspaceMode,
     toggleCommandPalette,
   } = useUIStore();
 
+  const { theme, setTheme } = useUIStore();
   const { runPipeline } = useAIStore();
+
+  function cycleTheme() {
+    const next = theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light';
+    setTheme(next);
+  }
   const deletePressed = useKeyPress(['Delete', 'Backspace']);
 
   const template = templateId ? TEMPLATES_DATA[templateId] : null;
   const projectName = template ? template.name : projectId === 'new' ? 'Untitled Project' : `Project ${projectId}`;
 
+  function handleAutoLayout() {
+    get().pushHistory();
+    const { nodes, edges } = get();
+    if (nodes.length === 0) return;
+    const laidOut = autoLayout(nodes, edges);
+    setNodes(laidOut);
+  }
+
   useEffect(() => {
     if (template) {
-      hydrate(template.nodes, template.edges);
+      const laidOut = autoLayout(template.nodes, template.edges);
+      hydrate(laidOut, template.edges);
     } else {
       const saved = localStorage.getItem(`orbit-project-${projectId}`);
       if (saved) fromJson(saved);
@@ -84,8 +102,8 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
     }
   }, [deletePressed, selectedNode, removeNode]);
 
-  const handlersRef = useRef({ handleSave, handleExportPng, handleExportSvg, handleExportJson });
-  handlersRef.current = { handleSave, handleExportPng, handleExportSvg, handleExportJson };
+  const handlersRef = useRef({ handleSave, handleExportPng, handleExportSvg, handleExportJson, handleAutoLayout });
+  handlersRef.current = { handleSave, handleExportPng, handleExportSvg, handleExportJson, handleAutoLayout };
 
   useEffect(() => {
     const keyboardHandler = (e: KeyboardEvent) => {
@@ -103,6 +121,9 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
         e.preventDefault(); toggleRightPanel(); return;
       }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'l') {
+        e.preventDefault(); handleAutoLayout(); return;
+      }
     };
     const eventHandler = (e: Event) => {
       switch (e.type) {
@@ -110,6 +131,7 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
         case ORBIT_EVENTS.EXPORT_SVG: handlersRef.current.handleExportSvg(); break;
         case ORBIT_EVENTS.EXPORT_JSON: handlersRef.current.handleExportJson(); break;
         case ORBIT_EVENTS.SAVE: handlersRef.current.handleSave(); break;
+        case ORBIT_EVENTS.AUTO_LAYOUT: handleAutoLayout(); break;
       }
     };
     window.addEventListener('keydown', keyboardHandler);
@@ -117,12 +139,13 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
     window.addEventListener(ORBIT_EVENTS.EXPORT_SVG, eventHandler);
     window.addEventListener(ORBIT_EVENTS.EXPORT_JSON, eventHandler);
     window.addEventListener(ORBIT_EVENTS.SAVE, eventHandler);
+    window.addEventListener(ORBIT_EVENTS.AUTO_LAYOUT, eventHandler);
     return () => {
-      window.removeEventListener('keydown', keyboardHandler);
       window.removeEventListener(ORBIT_EVENTS.EXPORT_PNG, eventHandler);
       window.removeEventListener(ORBIT_EVENTS.EXPORT_SVG, eventHandler);
       window.removeEventListener(ORBIT_EVENTS.EXPORT_JSON, eventHandler);
       window.removeEventListener(ORBIT_EVENTS.SAVE, eventHandler);
+      window.removeEventListener(ORBIT_EVENTS.AUTO_LAYOUT, eventHandler);
     };
   }, [undo, toggleSidebar, toggleRightPanel]);
 
@@ -158,10 +181,14 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
     setTimeout(() => setIsSaving(false), 600);
   }
 
+  function getBgColor() {
+    return getComputedStyle(document.documentElement).getPropertyValue('--color-background').trim() || '#FEFAEF';
+  }
+
   async function handleExportPng() {
     const el = reactFlowWrapper.current?.querySelector('.react-flow__renderer');
     if (!el) return;
-    const dataUrl = await toPng(el as HTMLElement, { backgroundColor: '#FEFAEF', pixelRatio: 2 });
+    const dataUrl = await toPng(el as HTMLElement, { backgroundColor: getBgColor(), pixelRatio: 2 });
     const a = document.createElement('a');
     a.href = dataUrl;
     a.download = `${projectName.replace(/\s+/g, '-').toLowerCase()}.png`;
@@ -172,7 +199,7 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
   async function handleExportSvg() {
     const el = reactFlowWrapper.current?.querySelector('.react-flow__renderer');
     if (!el) return;
-    const dataUrl = await toSvg(el as HTMLElement, { backgroundColor: '#FEFAEF', pixelRatio: 2 });
+    const dataUrl = await toSvg(el as HTMLElement, { backgroundColor: getBgColor(), pixelRatio: 2 });
     const a = document.createElement('a');
     a.href = dataUrl;
     a.download = `${projectName.replace(/\s+/g, '-').toLowerCase()}.svg`;
@@ -277,6 +304,10 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
             <Keyboard className="h-3.5 w-3.5" />
           </button>
 
+          <button onClick={cycleTheme} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200" title={`Theme: ${theme}`}>
+            {theme === 'dark' ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}
+          </button>
+
           <button
             onClick={() => { setActiveRightPanel('ai'); if (!rightPanelOpen) toggleRightPanel(); runPipeline(); }}
             className="flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1.5 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 transition-all duration-200"
@@ -328,7 +359,7 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
                 const colors: Record<string, string> = { database: '#22c55e', gateway: '#8b5cf6', backend: '#6366f1', frontend: '#3b82f6', cache: '#14b8a6', auth: '#ef4444' };
                 return colors[n.data?.type as string] || '#B9915E';
               }}
-              maskColor="rgba(237, 235, 222, 0.85)"
+              maskColor={theme === 'dark' ? 'rgba(22, 20, 18, 0.85)' : 'rgba(237, 235, 222, 0.85)'}
             />
           </ReactFlow>
 

@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, LayoutTemplate, Sparkles, Clock, ArrowRight, Upload, PanelRightClose, Settings } from 'lucide-react';
+import { Plus, LayoutTemplate, Sparkles, Clock, ArrowRight, Upload, PanelRightClose, Settings, Moon, Sun } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { APP_NAME } from '@/lib/constants';
+import { useUIStore } from '@/stores/ui-store';
 
 const MOCK_PROJECTS = [
   { id: 'healthcare', name: 'Healthcare SaaS Platform', description: 'Multi-tenant healthcare platform with AI diagnostics', updatedAt: '2026-06-28T10:00:00Z', nodeCount: 12 },
@@ -44,8 +45,14 @@ const scaleVariants = {
 
 export function DashboardPage() {
   const router = useRouter();
+  const { theme, setTheme } = useUIStore();
   const [showNewProject, setShowNewProject] = useState(false);
   const [projectName, setProjectName] = useState('');
+
+  function cycleTheme() {
+    const next = theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light';
+    setTheme(next);
+  }
 
   function handleCreateProject() {
     if (!projectName.trim()) return;
@@ -66,7 +73,14 @@ export function DashboardPage() {
           </div>
           <span className="text-sm font-medium tracking-tight">{APP_NAME}</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={cycleTheme}
+            className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
+            title={`Theme: ${theme} (click to cycle)`}
+          >
+            {theme === 'dark' ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}
+          </button>
           <button onClick={() => router.push('/sign-in')} className="rounded-md px-3 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200">
             Sign In
           </button>

@@ -27,6 +27,7 @@ export function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const commands: Command[] = [
+    { id: 'auto-layout', label: 'Auto Layout', description: 'Arrange all nodes with equal spacing', icon: Layout, shortcut: '⌘⇧L', action: () => dispatch(ORBIT_EVENTS.AUTO_LAYOUT) },
     { id: 'mode-canvas', label: 'Canvas Mode', description: 'Switch to canvas workspace', icon: Layout, action: () => setWorkspaceMode('canvas') },
     { id: 'mode-dac', label: 'Diagram-as-Code Mode', description: 'Split-pane code + canvas', icon: Code, action: () => setWorkspaceMode('dac') },
     { id: 'mode-docs', label: 'Docs Mode', description: 'Documentation + canvas view', icon: FileText, action: () => setWorkspaceMode('docs') },

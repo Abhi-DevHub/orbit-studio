@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 type WorkspaceMode = 'canvas' | 'dac' | 'docs';
+type ThemeMode = 'light' | 'dark' | 'system';
 
 interface UIState {
   sidebarOpen: boolean;
@@ -9,7 +10,7 @@ interface UIState {
   commandPaletteOpen: boolean;
   activeRightPanel: 'properties' | 'ai' | 'chat' | 'documentation';
   workspaceMode: WorkspaceMode;
-  theme: string;
+  theme: ThemeMode;
 
   toggleSidebar: () => void;
   toggleRightPanel: () => void;
@@ -17,7 +18,7 @@ interface UIState {
   toggleCommandPalette: () => void;
   setActiveRightPanel: (panel: UIState['activeRightPanel']) => void;
   setWorkspaceMode: (mode: WorkspaceMode) => void;
-  setTheme: (theme: string) => void;
+  setTheme: (theme: ThemeMode) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
