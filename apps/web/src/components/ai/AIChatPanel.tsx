@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Sparkles, Bot, User, Cpu, Database, Globe, Shield, Zap } from 'lucide-react';
+import { Send, Sparkles, Bot, User, Cpu, Database, Globe, Shield, Zap, Code, Copy, Check } from 'lucide-react';
 import { useAIStore } from '@/stores/ai-store';
+import { useUIStore } from '@/stores/ui-store';
 import type { LucideIcon } from 'lucide-react';
 
 const AGENT_ICONS: Record<string, LucideIcon> = {
@@ -18,8 +19,10 @@ const AGENT_ICONS: Record<string, LucideIcon> = {
 };
 
 export function AIChatPanel() {
-  const { messages, isGenerating, pipelineStatus, suggestions, addMessage, runPipeline } = useAIStore();
+  const { messages, isGenerating, pipelineStatus, suggestions, generatedDSL, addMessage, runPipeline } = useAIStore();
+  const { setWorkspaceMode } = useUIStore();
   const [input, setInput] = useState('');
+  const [copied, setCopied] = useState(false);
 
   function handleSend() {
     if (!input.trim() || isGenerating) return;
@@ -120,6 +123,34 @@ export function AIChatPanel() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {generatedDSL && (
+          <div className="rounded-xl border border-border bg-card p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <Code className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Generated DSL</span>
+              </div>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => { navigator.clipboard.writeText(generatedDSL); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+                  className="flex items-center gap-1 rounded-md border border-border px-1.5 py-0.5 text-[9px] text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
+                >
+                  {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  {copied ? 'Copied' : 'Copy'}
+                </button>
+                <button
+                  onClick={() => setWorkspaceMode('dac')}
+                  className="flex items-center gap-1 rounded-md border border-border px-1.5 py-0.5 text-[9px] text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
+                >
+                  <Code className="h-3 w-3" />
+                  DaC
+                </button>
+              </div>
+            </div>
+            <pre className="max-h-32 overflow-y-auto rounded-lg bg-background p-2.5 text-[9px] leading-relaxed text-muted-foreground font-mono border border-border whitespace-pre-wrap">{generatedDSL}</pre>
           </div>
         )}
       </div>

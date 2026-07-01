@@ -8,11 +8,13 @@ import {
   MiniMap,
   useKeyPress,
   BackgroundVariant,
-  type Node,
-  type Edge,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { ArrowLeft, Sparkles, MessageSquare, Settings, Download, Undo2, Redo2, Save, PanelRightOpen, PanelRightClose, Trash2, Image, FileJson, FileType } from 'lucide-react';
+import {
+  ArrowLeft, Sparkles, MessageSquare, Settings, Download, Undo2, Redo2,
+  Save, PanelRightOpen, PanelRightClose, Trash2, Image, FileJson, FileType,
+  Code, Layout, FileText, Keyboard,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toPng, toSvg } from 'html-to-image';
 import { useCanvasStore } from '@/stores/canvas-store';
@@ -21,11 +23,19 @@ import { useAIStore } from '@/stores/ai-store';
 import { NodeLibrary } from '@/components/canvas/NodeLibrary';
 import { PropertiesPanel } from '@/components/canvas/PropertiesPanel';
 import { AIChatPanel } from '@/components/ai/AIChatPanel';
+import { DaCEditor } from '@/components/canvas/DaCEditor';
+import { CommandPalette } from '@/components/canvas/CommandPalette';
 import { ArchNode } from '@/components/canvas/nodes';
 import { TEMPLATES_DATA } from '@/lib/templates-data';
 import { cn } from '@/lib/utils';
 
 const nodeTypes = { archNode: ArchNode };
+
+const MODES = [
+  { id: 'canvas' as const, label: 'Canvas', icon: Layout },
+  { id: 'dac' as const, label: 'DaC', icon: Code },
+  { id: 'docs' as const, label: 'Docs', icon: FileText },
+];
 
 interface WorkspacePageProps {
   projectId: string;
@@ -42,13 +52,17 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
     nodes, edges, selectedNode, selectNode,
     onNodesChange, onEdgesChange, onConnect,
     addNode, removeNode, removeEdge, undo, redo,
-    isSaving, lastSaved, hydrate, toJson, fromJson,
+    isSaving, lastSaved, hydrate, toJson, fromJson, setNodes, setEdges,
     setIsSaving, setLastSaved,
   } = useCanvasStore();
 
-  const { sidebarOpen, rightPanelOpen, toggleSidebar, toggleRightPanel, activeRightPanel, setActiveRightPanel } = useUIStore();
-  const { suggestions, setPipelineStatus, addMessage, runPipeline } = useAIStore();
+  const {
+    sidebarOpen, rightPanelOpen, toggleSidebar, toggleRightPanel,
+    activeRightPanel, setActiveRightPanel, workspaceMode, setWorkspaceMode,
+    toggleCommandPalette,
+  } = useUIStore();
 
+  const { runPipeline } = useAIStore();
   const deletePressed = useKeyPress(['Delete', 'Backspace']);
 
   const template = templateId ? TEMPLATES_DATA[templateId] : null;
@@ -69,6 +83,26 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
     }
   }, [deletePressed, selectedNode, removeNode]);
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        if (e.shiftKey) { e.preventDefault(); redo(); }
+        else { e.preventDefault(); undo(); }
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault(); handleSave();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+        e.preventDefault(); toggleSidebar();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
+        e.preventDefault(); toggleRightPanel();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [undo, redo, toggleSidebar, toggleRightPanel]);
+
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
@@ -80,7 +114,7 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
       const type = event.dataTransfer.getData('application/reactflow');
       if (!type || !reactFlowInstance.current) return;
       const position = reactFlowInstance.current.screenToFlowPosition({ x: event.clientX, y: event.clientY });
-      const newNode: Node = {
+      addNode({
         id: `node_${Date.now()}`,
         type: 'archNode',
         position,
@@ -89,16 +123,14 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
           type,
           metadata: { status: 'planned' },
         },
-      };
-      addNode(newNode);
+      });
     },
     [addNode],
   );
 
   function handleSave() {
     setIsSaving(true);
-    const json = toJson();
-    localStorage.setItem(`orbit-project-${projectId}`, json);
+    localStorage.setItem(`orbit-project-${projectId}`, toJson());
     setLastSaved(new Date());
     setTimeout(() => setIsSaving(false), 600);
   }
@@ -126,8 +158,7 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
   }
 
   function handleExportJson() {
-    const json = toJson();
-    const blob = new Blob([json], { type: 'application/json' });
+    const blob = new Blob([toJson()], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -139,19 +170,39 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
 
   return (
     <div className="flex h-dvh flex-col bg-background">
+      <CommandPalette />
+
       <header className="flex h-11 items-center justify-between border-b border-border px-3">
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => router.push('/')}
-            className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
-          >
+          <button onClick={() => router.push('/')} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200">
             <ArrowLeft className="h-3.5 w-3.5" />
           </button>
           <span className="text-xs font-medium">{projectName}</span>
           <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground border border-border">
             {isSaving ? 'Saving...' : lastSaved ? 'Saved' : 'Draft'}
           </span>
+
+          <div className="ml-4 flex items-center rounded-lg border border-border bg-card p-0.5">
+            {MODES.map((mode) => {
+              const Icon = mode.icon;
+              const isActive = workspaceMode === mode.id;
+              return (
+                <button
+                  key={mode.id}
+                  onClick={() => setWorkspaceMode(mode.id)}
+                  className={cn(
+                    'flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-all duration-200',
+                    isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  <Icon className="h-3 w-3" />
+                  {mode.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
+
         <div className="flex items-center gap-0.5">
           <button onClick={() => undo()} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200" title="Undo (⌘Z)">
             <Undo2 className="h-3.5 w-3.5" />
@@ -159,9 +210,10 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
           <button onClick={() => redo()} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200" title="Redo (⌘⇧Z)">
             <Redo2 className="h-3.5 w-3.5" />
           </button>
+
           <div className="mx-1.5 h-4 w-px bg-border" />
 
-          <button onClick={handleSave} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200" title="Save">
+          <button onClick={handleSave} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200" title="Save (⌘S)">
             <Save className="h-3.5 w-3.5" />
           </button>
 
@@ -174,16 +226,13 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
                 <div className="fixed inset-0 z-10" onClick={() => setShowExportMenu(false)} />
                 <div className="absolute right-0 top-full z-20 mt-1 w-40 rounded-xl border border-border bg-card p-1.5 shadow-lg">
                   <button onClick={handleExportPng} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200">
-                    <Image className="h-3.5 w-3.5" />
-                    Export PNG
+                    <Image className="h-3.5 w-3.5" /> Export PNG
                   </button>
                   <button onClick={handleExportSvg} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200">
-                    <FileType className="h-3.5 w-3.5" />
-                    Export SVG
+                    <FileType className="h-3.5 w-3.5" /> Export SVG
                   </button>
                   <button onClick={handleExportJson} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200">
-                    <FileJson className="h-3.5 w-3.5" />
-                    Export JSON
+                    <FileJson className="h-3.5 w-3.5" /> Export JSON
                   </button>
                 </div>
               </>
@@ -193,16 +242,18 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
           {selectedNode && (
             <>
               <div className="mx-1.5 h-4 w-px bg-border" />
-              <button
-                onClick={() => removeNode(selectedNode)}
-                className="rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200"
-                title="Delete node"
-              >
+              <button onClick={() => removeNode(selectedNode)} className="rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200" title="Delete (⌫)">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </>
           )}
+
           <div className="mx-1.5 h-4 w-px bg-border" />
+
+          <button onClick={toggleCommandPalette} className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200" title="Commands (⌘K)">
+            <Keyboard className="h-3.5 w-3.5" />
+          </button>
+
           <button
             onClick={() => { setActiveRightPanel('ai'); if (!rightPanelOpen) toggleRightPanel(); runPipeline(); }}
             className="flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1.5 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 transition-all duration-200"
@@ -214,9 +265,15 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {sidebarOpen && (
+        {workspaceMode === 'canvas' && sidebarOpen && (
           <aside className="w-52 border-r border-border overflow-y-auto bg-card/30">
             <NodeLibrary />
+          </aside>
+        )}
+
+        {workspaceMode === 'dac' && (
+          <aside className="w-80 border-r border-border overflow-hidden flex flex-col bg-card/30">
+            <DaCEditor />
           </aside>
         )}
 
@@ -253,20 +310,12 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
           </ReactFlow>
 
           <div className="absolute bottom-3 left-3 flex gap-2">
-            <button
-              onClick={toggleSidebar}
-              className="rounded-md border border-border bg-card p-1.5 text-muted-foreground shadow-sm hover:text-foreground hover:bg-secondary transition-all duration-200"
-              title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
-            >
+            <button onClick={toggleSidebar} className="rounded-md border border-border bg-card p-1.5 text-muted-foreground shadow-sm hover:text-foreground hover:bg-secondary transition-all duration-200" title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}>
               <PanelRightClose className="h-3.5 w-3.5" />
             </button>
           </div>
           <div className="absolute bottom-3 right-3 flex gap-2">
-            <button
-              onClick={toggleRightPanel}
-              className="rounded-md border border-border bg-card p-1.5 text-muted-foreground shadow-sm hover:text-foreground hover:bg-secondary transition-all duration-200"
-              title={rightPanelOpen ? 'Close panel' : 'Open panel'}
-            >
+            <button onClick={toggleRightPanel} className="rounded-md border border-border bg-card p-1.5 text-muted-foreground shadow-sm hover:text-foreground hover:bg-secondary transition-all duration-200" title={rightPanelOpen ? 'Close panel' : 'Open panel'}>
               <PanelRightOpen className="h-3.5 w-3.5" />
             </button>
           </div>
