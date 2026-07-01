@@ -86,11 +86,11 @@ export function DashboardPage() {
               { label: 'Templates', href: '/templates', icon: LayoutTemplate, active: false },
               { label: 'Settings', href: '/settings', icon: Settings, active: false },
             ].map((item) => (
-              <a
+              <button
                 key={item.label}
-                href={item.href}
+                onClick={() => router.push(item.href)}
                 className={cn(
-                  'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs transition-all duration-200',
+                  'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs transition-all duration-200',
                   item.active
                     ? 'bg-secondary text-foreground font-medium'
                     : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50',
@@ -98,7 +98,7 @@ export function DashboardPage() {
               >
                 <item.icon className="h-3.5 w-3.5" />
                 {item.label}
-              </a>
+              </button>
             ))}
           </nav>
         </motion.aside>

@@ -8,6 +8,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useUIStore } from '@/stores/ui-store';
 import { useCanvasStore } from '@/stores/canvas-store';
+import { dispatch, ORBIT_EVENTS } from '@/lib/events';
 
 interface Command {
   id: string;
@@ -31,12 +32,12 @@ export function CommandPalette() {
     { id: 'mode-docs', label: 'Docs Mode', description: 'Documentation + canvas view', icon: FileText, action: () => setWorkspaceMode('docs') },
     { id: 'ai-architect', label: 'AI Architect', description: 'Open the AI architecture assistant', icon: Sparkles, action: () => { setWorkspaceMode('canvas') } },
     { id: 'templates', label: 'Browse Templates', description: 'Open template gallery', icon: LayoutTemplate, action: () => { router.push('/templates'); toggleCommandPalette(); } },
-    { id: 'export-png', label: 'Export PNG', description: 'Export canvas as PNG image', icon: Image, action: () => {} },
-    { id: 'export-svg', label: 'Export SVG', description: 'Export canvas as SVG', icon: FileType, action: () => {} },
-    { id: 'export-json', label: 'Export JSON', description: 'Export canvas data as JSON', icon: FileJson, action: () => {} },
+    { id: 'export-png', label: 'Export PNG', description: 'Export canvas as PNG image', icon: Image, action: () => dispatch(ORBIT_EVENTS.EXPORT_PNG) },
+    { id: 'export-svg', label: 'Export SVG', description: 'Export canvas as SVG', icon: FileType, action: () => dispatch(ORBIT_EVENTS.EXPORT_SVG) },
+    { id: 'export-json', label: 'Export JSON', description: 'Export canvas data as JSON', icon: FileJson, action: () => dispatch(ORBIT_EVENTS.EXPORT_JSON) },
     { id: 'undo', label: 'Undo', description: 'Undo last action', icon: Undo2, shortcut: '⌘Z', action: () => { undo(); toggleCommandPalette(); } },
     { id: 'redo', label: 'Redo', description: 'Redo last undone action', icon: Redo2, shortcut: '⌘⇧Z', action: () => { redo(); toggleCommandPalette(); } },
-    { id: 'save', label: 'Save', description: 'Save current project', icon: Save, shortcut: '⌘S', action: () => {} },
+    { id: 'save', label: 'Save', description: 'Save current project', icon: Save, shortcut: '⌘S', action: () => dispatch(ORBIT_EVENTS.SAVE) },
     { id: 'toggle-sidebar', label: 'Toggle Sidebar', description: 'Show or hide the sidebar', icon: PanelRightClose, shortcut: '⌘B', action: () => { toggleSidebar(); toggleCommandPalette(); } },
     { id: 'toggle-panel', label: 'Toggle Right Panel', description: 'Show or hide the right panel', icon: PanelRightOpen, shortcut: '⌘E', action: () => { toggleRightPanel(); toggleCommandPalette(); } },
     { id: 'shortcuts', label: 'Keyboard Shortcuts', description: 'View all keyboard shortcuts', icon: Keyboard, shortcut: '⌘/', action: () => { toggleCommandPalette(); } },

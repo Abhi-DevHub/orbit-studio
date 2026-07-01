@@ -28,6 +28,7 @@ import { CommandPalette } from '@/components/canvas/CommandPalette';
 import { ArchNode } from '@/components/canvas/nodes';
 import { TEMPLATES_DATA } from '@/lib/templates-data';
 import { cn } from '@/lib/utils';
+import { ORBIT_EVENTS } from '@/lib/events';
 
 const nodeTypes = { archNode: ArchNode };
 
@@ -83,25 +84,47 @@ export function WorkspacePage({ projectId, templateId }: WorkspacePageProps) {
     }
   }, [deletePressed, selectedNode, removeNode]);
 
+  const handlersRef = useRef({ handleSave, handleExportPng, handleExportSvg, handleExportJson });
+  handlersRef.current = { handleSave, handleExportPng, handleExportSvg, handleExportJson };
+
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
+    const keyboardHandler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
         if (e.shiftKey) { e.preventDefault(); redo(); }
         else { e.preventDefault(); undo(); }
+        return;
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        e.preventDefault(); handleSave();
+        e.preventDefault(); handlersRef.current.handleSave(); return;
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
-        e.preventDefault(); toggleSidebar();
+        e.preventDefault(); toggleSidebar(); return;
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
-        e.preventDefault(); toggleRightPanel();
+        e.preventDefault(); toggleRightPanel(); return;
       }
     };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [undo, redo, toggleSidebar, toggleRightPanel]);
+    const eventHandler = (e: Event) => {
+      switch (e.type) {
+        case ORBIT_EVENTS.EXPORT_PNG: handlersRef.current.handleExportPng(); break;
+        case ORBIT_EVENTS.EXPORT_SVG: handlersRef.current.handleExportSvg(); break;
+        case ORBIT_EVENTS.EXPORT_JSON: handlersRef.current.handleExportJson(); break;
+        case ORBIT_EVENTS.SAVE: handlersRef.current.handleSave(); break;
+      }
+    };
+    window.addEventListener('keydown', keyboardHandler);
+    window.addEventListener(ORBIT_EVENTS.EXPORT_PNG, eventHandler);
+    window.addEventListener(ORBIT_EVENTS.EXPORT_SVG, eventHandler);
+    window.addEventListener(ORBIT_EVENTS.EXPORT_JSON, eventHandler);
+    window.addEventListener(ORBIT_EVENTS.SAVE, eventHandler);
+    return () => {
+      window.removeEventListener('keydown', keyboardHandler);
+      window.removeEventListener(ORBIT_EVENTS.EXPORT_PNG, eventHandler);
+      window.removeEventListener(ORBIT_EVENTS.EXPORT_SVG, eventHandler);
+      window.removeEventListener(ORBIT_EVENTS.EXPORT_JSON, eventHandler);
+      window.removeEventListener(ORBIT_EVENTS.SAVE, eventHandler);
+    };
+  }, [undo, toggleSidebar, toggleRightPanel]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();

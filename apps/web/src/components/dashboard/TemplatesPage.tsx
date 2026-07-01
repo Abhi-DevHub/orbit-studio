@@ -93,7 +93,7 @@ export function TemplatesPage() {
                   className="group relative rounded-xl border border-border bg-card p-5 text-left transition-all duration-200 hover:border-primary/20 overflow-hidden"
                 >
                   <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{
-                    background: 'radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), hsl(196 100% 50% / 0.03), transparent 40%)'
+                    background: 'radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), hsl(230 55% 20% / 0.04), transparent 40%)'
                   }} />
                   <div className={`mb-3.5 inline-flex h-9 w-9 items-center justify-center rounded-lg ${style.bg} border ${style.border} group-hover:border-primary/30 transition-colors duration-200`}>
                     <template.icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors duration-200" />

@@ -49,7 +49,7 @@ const SECTIONS: SettingsSection[] = [
     icon: Palette,
     label: 'Appearance',
     items: [
-      { label: 'Theme', type: 'select', options: ['Dark', 'Light', 'System'], value: 'Dark' },
+      { label: 'Theme', type: 'select', options: ['Light', 'Dark', 'System'], value: 'Light' },
     ],
   },
   {

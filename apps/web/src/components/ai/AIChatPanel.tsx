@@ -56,8 +56,8 @@ export function AIChatPanel() {
               <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${msg.role === 'user' ? 'bg-primary/10' : msg.role === 'system' ? 'bg-amber-500/10' : 'bg-secondary'}`}>
                 {msg.role === 'user' ? <User className="h-3.5 w-3.5 text-primary" /> : <Bot className="h-3.5 w-3.5 text-muted-foreground" />}
               </div>
-              <div className={`rounded-xl px-3 py-2 text-xs leading-relaxed max-w-[80%] ${msg.role === 'user' ? 'bg-primary/10 text-foreground' : 'bg-secondary/50 text-muted-foreground'}`}>
-                <div dangerouslySetInnerHTML={{ __html: msg.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }} />
+              <div className={`rounded-xl px-3 py-2 text-xs leading-relaxed max-w-[80%] whitespace-pre-wrap ${msg.role === 'user' ? 'bg-primary/10 text-foreground' : 'bg-secondary/50 text-muted-foreground'}`}>
+                {renderMessageContent(msg.content)}
               </div>
             </motion.div>
           ))}
@@ -193,4 +193,14 @@ export function AIChatPanel() {
       </div>
     </div>
   );
+}
+
+function renderMessageContent(text: string) {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} className="text-foreground">{part.slice(2, -2)}</strong>;
+    }
+    return <span key={i}>{part}</span>;
+  });
 }
